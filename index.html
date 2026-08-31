@@ -11,7 +11,7 @@
     --purple-dark: #371f4f;
     --purple-light: #f3eef9;
     --green: #66CC00;
-    --green-dark: #4e9c02;
+    --green-dark: #3e7b01;
     --ink: #2a2333;
     --muted: #6f6580;
     --line: #e6dff0;
@@ -35,7 +35,7 @@
 
   .progress { display: flex; gap: 6px; margin: 26px 0 18px; }
   .progress span { flex: 1; height: 6px; border-radius: 3px; background: var(--line); transition: background .3s; }
-  .progress span.done { background: var(--green); }
+  .progress span.done { background: var(--green-dark); }
   .progress span.now { background: var(--purple); }
 
   .card {
@@ -66,10 +66,10 @@
     padding: 20px 22px; margin-bottom: 14px; position: relative;
     box-shadow: 0 6px 24px rgba(75, 40, 109, 0.06);
   }
-  .pick.top { border: 2px solid var(--green); }
+  .pick.top { border: 2px solid var(--green-dark); }
   .medal {
     position: absolute; top: -11px; left: 18px; font-size: 12px; font-weight: 800;
-    background: var(--green); color: #fff; border-radius: 999px; padding: 3px 12px;
+    background: var(--green-dark); color: #fff; border-radius: 999px; padding: 3px 12px;
     text-transform: uppercase; letter-spacing: .06em;
   }
   .medal.silver { background: var(--purple); }
@@ -107,9 +107,24 @@
   .restart:hover { background: var(--purple-light); }
   footer { margin-top: 28px; font-size: 12.5px; color: var(--muted); text-align: center; }
   footer p { margin-bottom: 6px; }
+
+  /* Accessibility helpers */
+  .sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+  }
+  .skip-link {
+    position: absolute; top: -48px; left: 8px; z-index: 9999;
+    background: var(--purple); color: #fff; font-weight: 700; font-size: 14px;
+    padding: 10px 16px; border-radius: 0 0 10px 10px; text-decoration: none;
+  }
+  .skip-link:focus { top: 0; }
+  :focus-visible { outline: 3px solid var(--purple); outline-offset: 2px; }
+  main:focus-visible, h2:focus-visible { outline: none; }
 </style>
 </head>
 <body>
+<a class="skip-link" href="#app">Skip to the quiz</a>
 <div class="wrap">
   <header>
     <span class="kicker">AI Courses Masterlist</span>
@@ -119,7 +134,7 @@
   </header>
 
   <div class="progress" id="progress" aria-hidden="true"></div>
-  <main id="app" aria-live="polite"></main>
+  <main id="app" aria-live="polite" tabindex="-1"></main>
 
   <footer>
     <p>Prices are USD list prices as of August 2026 — confirm before enrolling, and check whether L&amp;D already covers it.</p>
@@ -300,7 +315,7 @@ function renderResults() {
 
   app.innerHTML = `
     <div class="results">
-      <h2>Your matches</h2>
+      <h2 id="results-title" tabindex="-1">Your matches</h2>
       <p class="rsub">Scored across discipline, difficulty, budget, time, credential type, format, and goals.</p>
       ${picks.map((p, i) => `
         <div class="pick ${i === 0 ? "top" : ""}">
@@ -310,16 +325,17 @@ function renderResults() {
           <div class="meta">${metaChips(p.c)}</div>
           ${p.why.length ? `<div class="why">${p.why.map(w => `<span>✓ ${w}</span>`).join("")}</div>` : ""}
           <p class="note">${p.c.note}${p.c.partner ? ` <span class="warn">Requires Claude Partner Network access — confirm before scheduling.</span>` : ""}</p>
-          <a class="go" href="${p.c.url}" target="_blank" rel="noopener">View course →</a>
+          <a class="go" href="${p.c.url}" target="_blank" rel="noopener" aria-label="View ${p.c.name} (opens in a new tab)">View course →</a>
         </div>`).join("")}
       ${also.length ? `<div class="alsohead">Also worth a look</div>` + also.map(p => `
         <div class="also">
           <div class="l">${p.c.name}<small>${p.c.provider} · ${p.c.costLabel} · ${p.c.timeLabel}</small></div>
-          <a href="${p.c.url}" target="_blank" rel="noopener">View →</a>
+          <a href="${p.c.url}" target="_blank" rel="noopener" aria-label="View ${p.c.name} (opens in a new tab)">View →</a>
         </div>`).join("") : ""}
       <button class="restart" id="restart">↺ Take it again</button>
     </div>`;
   document.getElementById("restart").addEventListener("click", () => { answers = {}; step = 0; renderQuestion(); });
+  document.getElementById("results-title").focus();
 }
 
 renderQuestion();
