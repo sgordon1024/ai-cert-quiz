@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>All Courses — AI Course Matchmaker</title>
+<meta name="description" content="Browse, sort, and filter all 33 AI courses and certifications from the masterlist. Toggle columns like a spreadsheet.">
+<style>
+  :root {
+    --purple: #4B286D;
+    --purple-dark: #371f4f;
+    --purple-light: #f3eef9;
+    --green: #66CC00;
+    --green-dark: #4e9c02;
+    --ink: #2a2333;
+    --muted: #6f6580;
+    --line: #e6dff0;
+    --bg: #faf8fd;
+    --card: #ffffff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.45;
+  }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 28px 20px 60px; }
+  header { text-align: center; margin-bottom: 20px; }
+  .kicker { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--green-dark); margin-bottom: 8px; }
+  h1 { font-size: clamp(24px, 4vw, 34px); color: var(--purple); letter-spacing: -0.02em; }
+  .sub { color: var(--muted); margin-top: 6px; font-size: 15px; }
+  .sub a { color: var(--purple); font-weight: 700; }
+
+  .panel {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    padding: 16px 18px; margin-bottom: 14px; box-shadow: 0 6px 24px rgba(75, 40, 109, 0.05);
+  }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .row + .row { margin-top: 12px; }
+  .lbl { font-size: 12px; font-weight: 800; color: var(--purple); text-transform: uppercase; letter-spacing: .07em; margin-right: 2px; }
+  input[type="search"] {
+    flex: 1; min-width: 200px; font: inherit; font-size: 14.5px; padding: 9px 13px;
+    border: 1.5px solid var(--line); border-radius: 9px; background: var(--bg); color: var(--ink);
+  }
+  input[type="search"]:focus { outline: none; border-color: var(--purple); }
+  select {
+    font: inherit; font-size: 13.5px; padding: 8px 10px; border: 1.5px solid var(--line);
+    border-radius: 9px; background: var(--bg); color: var(--ink); cursor: pointer;
+  }
+  .chip {
+    font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; user-select: none;
+    background: var(--purple-light); color: var(--purple); border: 1.5px solid transparent;
+    border-radius: 999px; padding: 6px 13px; transition: all .12s;
+  }
+  .chip:hover { border-color: var(--purple); }
+  .chip.on { background: var(--purple); color: #fff; }
+  .chip.col.on { background: var(--green-dark); color: #fff; }
+  .chip.col { background: #f0fae4; color: var(--green-dark); }
+  .chip.col.off { background: var(--bg); color: var(--muted); text-decoration: line-through; }
+  label.free { font-size: 13.5px; font-weight: 600; color: var(--ink); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .count { margin-left: auto; font-size: 13px; color: var(--muted); font-weight: 600; white-space: nowrap; }
+  .reset { font: inherit; font-size: 13px; font-weight: 700; color: var(--muted); background: none; border: none; cursor: pointer; text-decoration: underline; }
+  .reset:hover { color: var(--purple); }
+
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--card); box-shadow: 0 6px 24px rgba(75, 40, 109, 0.05); }
+  table { border-collapse: collapse; width: 100%; font-size: 13.5px; min-width: 640px; }
+  thead th {
+    position: sticky; top: 0; background: var(--purple); color: #fff; text-align: left;
+    font-size: 12px; font-weight: 700; letter-spacing: .03em; padding: 11px 12px;
+    cursor: pointer; user-select: none; white-space: nowrap;
+  }
+  thead th:hover { background: var(--purple-dark); }
+  thead th.nosort { cursor: default; }
+  thead th .arrow { opacity: .6; font-size: 11px; margin-left: 4px; }
+  tbody td { padding: 10px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+  tbody tr:nth-child(even) { background: #fbf9fe; }
+  tbody tr:hover { background: var(--purple-light); }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  td.name { font-weight: 700; color: var(--purple-dark); min-width: 190px; }
+  td.notes { min-width: 260px; color: var(--muted); font-size: 13px; }
+  td.notes .warn { color: #a15c00; font-weight: 600; }
+  .cat { font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 3px 10px; white-space: nowrap; display: inline-block; }
+  .cat.General { background: #deebf7; color: #1f4e79; }
+  .cat.Design { background: #e2efda; color: #375623; }
+  .cat.Development { background: #fce4d6; color: #833c00; }
+  .cat.PL { background: #e8dff0; color: var(--purple); }
+  td a.view { color: var(--purple); font-weight: 700; text-decoration: none; white-space: nowrap; }
+  td a.view:hover { text-decoration: underline; }
+  .empty { padding: 36px; text-align: center; color: var(--muted); }
+  footer { margin-top: 22px; font-size: 12.5px; color: var(--muted); text-align: center; }
+  footer p { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="kicker">AI Courses Masterlist</span>
+    <h1>All 33 courses &amp; certifications</h1>
+    <p class="sub">Sort any column, filter, and toggle columns on or off — or <a href="index.html">take the 10-question quiz →</a></p>
+  </header>
+
+  <div class="panel">
+    <div class="row">
+      <input type="search" id="search" placeholder="Search name, provider, or notes…" aria-label="Search courses">
+      <select id="cred" aria-label="Credential type">
+        <option value="">Credential: any</option>
+        <option value="proctored">Proctored certification</option>
+        <option value="cert">Certificate</option>
+        <option value="badge">Badge</option>
+      </select>
+      <select id="format" aria-label="Format">
+        <option value="">Format: any</option>
+        <option value="self">Self-paced</option>
+        <option value="live">Live / cohort</option>
+        <option value="exam">Proctored exam</option>
+      </select>
+      <label class="free"><input type="checkbox" id="free"> Free only</label>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="row">
+      <span class="lbl">Discipline</span>
+      <span id="cats"></span>
+    </div>
+    <div class="row">
+      <span class="lbl">Columns</span>
+      <span id="cols"></span>
+      <button class="reset" id="reset">Reset all</button>
+    </div>
+  </div>
+
+  <div class="tablewrap">
+    <table>
+      <thead><tr id="thead"></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="empty" id="empty" hidden>No courses match those filters — try loosening them.</div>
+  </div>
+
+  <footer>
+    <p>Prices are USD list prices as of August 2026 — confirm before enrolling, and check whether L&amp;D already covers it. Est. cost/effort are rough single numbers so sorting works; the notes columns carry the nuance.</p>
+    <p>Anthropic's proctored certifications currently require Claude Partner Network access; the free Anthropic Academy courses are open to everyone.</p>
+  </footer>
+</div>
+
+<script src="courses-data.js"></script>
+<script>
+const LEVEL_TEXT = {1:"Beginner", 1.5:"Beg–Int", 2:"Intermediate", 3:"Advanced"};
+const FORMAT_TEXT = {self:"Self-paced", live:"Live / cohort", exam:"Proctored exam"};
+const CRED_TEXT = {proctored:"Proctored cert", cert:"Certificate", badge:"Badge"};
+const CATS = ["General", "Design", "Development", "Product & Leadership"];
+
+const COLUMNS = [
+  {key:"name",    label:"Name",            type:"text", get:c=>c.name,     render:c=>c.name, cls:"name"},
+  {key:"provider",label:"Provider",        type:"text", get:c=>c.provider, render:c=>c.provider},
+  {key:"cat",     label:"Category",        type:"text", get:c=>c.cat,      render:c=>`<span class="cat ${c.cat==="Product & Leadership"?"PL":c.cat}">${c.cat}</span>`},
+  {key:"cred",    label:"Credential",      type:"text", get:c=>CRED_TEXT[c.cred], render:c=>CRED_TEXT[c.cred]},
+  {key:"level",   label:"Level",           type:"num",  get:c=>c.level,    render:c=>`${LEVEL_TEXT[c.level]} (${c.level})`, cls:"num"},
+  {key:"cost",    label:"Est. cost ($)",   type:"num",  get:c=>c.cost,     render:c=>c.cost==null?"—":"$"+c.cost.toLocaleString(), cls:"num"},
+  {key:"costLabel",label:"Price notes",    type:"text", get:c=>c.costLabel,render:c=>c.costLabel},
+  {key:"effort",  label:"Est. effort (hrs)",type:"num", get:c=>c.effort,   render:c=>c.effort, cls:"num"},
+  {key:"timeLabel",label:"Time notes",     type:"text", get:c=>c.timeLabel,render:c=>c.timeLabel},
+  {key:"format",  label:"Format",          type:"text", get:c=>FORMAT_TEXT[c.format], render:c=>FORMAT_TEXT[c.format]},
+  {key:"notes",   label:"Notes",           type:"text", get:c=>c.note,     render:c=>c.note + (c.partner ? ' <span class="warn">Requires Claude Partner Network access.</span>' : ""), cls:"notes"},
+  {key:"link",    label:"Link",            type:"none", get:()=>0,         render:c=>`<a class="view" href="${c.url}" target="_blank" rel="noopener">View →</a>`},
+];
+const DEFAULT_HIDDEN = ["costLabel", "timeLabel"];
+
+let state = {
+  search: "", cats: new Set(CATS), cred: "", format: "", freeOnly: false,
+  sortKey: null, sortDir: 1,
+  hidden: new Set(JSON.parse(localStorage.getItem("aicq-hidden") || "null") || DEFAULT_HIDDEN),
+};
+
+function saveCols() { localStorage.setItem("aicq-hidden", JSON.stringify([...state.hidden])); }
+
+// ---------- controls ----------
+const $ = id => document.getElementById(id);
+
+function renderCatChips() {
+  $("cats").innerHTML = CATS.map(c =>
+    `<button class="chip ${state.cats.has(c) ? "on" : ""}" data-cat="${c}" style="margin-right:6px">${c}</button>`).join("");
+  $("cats").querySelectorAll(".chip").forEach(ch => ch.onclick = () => {
+    const c = ch.dataset.cat;
+    if (state.cats.has(c) && state.cats.size === 1) { state.cats = new Set(CATS); }
+    else if (state.cats.size === CATS.length) { state.cats = new Set([c]); }
+    else { state.cats.has(c) ? state.cats.delete(c) : state.cats.add(c); }
+    renderCatChips(); renderTable();
+  });
+}
+
+function renderColChips() {
+  $("cols").innerHTML = COLUMNS.map(col =>
+    `<button class="chip col ${state.hidden.has(col.key) ? "off" : "on"}" data-col="${col.key}" style="margin-right:6px" aria-pressed="${!state.hidden.has(col.key)}">${col.label}</button>`).join("");
+  $("cols").querySelectorAll(".chip").forEach(ch => ch.onclick = () => {
+    const k = ch.dataset.col;
+    state.hidden.has(k) ? state.hidden.delete(k) : (visibleCols().length > 1 && state.hidden.add(k));
+    saveCols(); renderColChips(); renderTable();
+  });
+}
+
+function visibleCols() { return COLUMNS.filter(c => !state.hidden.has(c.key)); }
+
+$("search").addEventListener("input", e => { state.search = e.target.value.toLowerCase(); renderTable(); });
+$("cred").addEventListener("change", e => { state.cred = e.target.value; renderTable(); });
+$("format").addEventListener("change", e => { state.format = e.target.value; renderTable(); });
+$("free").addEventListener("change", e => { state.freeOnly = e.target.checked; renderTable(); });
+$("reset").addEventListener("click", () => {
+  state = { ...state, search: "", cats: new Set(CATS), cred: "", format: "", freeOnly: false, sortKey: null, sortDir: 1, hidden: new Set(DEFAULT_HIDDEN) };
+  $("search").value = ""; $("cred").value = ""; $("format").value = ""; $("free").checked = false;
+  saveCols(); renderCatChips(); renderColChips(); renderTable();
+});
+
+// ---------- table ----------
+function filtered() {
+  return COURSES.filter(c => {
+    if (!state.cats.has(c.cat)) return false;
+    if (state.cred && c.cred !== state.cred) return false;
+    if (state.format && c.format !== state.format) return false;
+    if (state.freeOnly && c.cost !== 0) return false;
+    if (state.search) {
+      const hay = (c.name + " " + c.provider + " " + c.note + " " + c.cat + " " + (c.topics || []).join(" ")).toLowerCase();
+      if (!hay.includes(state.search)) return false;
+    }
+    return true;
+  });
+}
+
+function sorted(rows) {
+  if (!state.sortKey) return rows;
+  const col = COLUMNS.find(c => c.key === state.sortKey);
+  return [...rows].sort((a, b) => {
+    let va = col.get(a), vb = col.get(b);
+    if (col.type === "num") { va = va == null ? Infinity : va; vb = vb == null ? Infinity : vb; return (va - vb) * state.sortDir; }
+    return String(va).localeCompare(String(vb)) * state.sortDir;
+  });
+}
+
+function renderTable() {
+  const cols = visibleCols();
+  $("thead").innerHTML = cols.map(col => {
+    const sortable = col.type !== "none";
+    const arrow = state.sortKey === col.key ? (state.sortDir === 1 ? "↑" : "↓") : (sortable ? "↕" : "");
+    return `<th class="${sortable ? "" : "nosort"}" data-key="${col.key}" aria-sort="${state.sortKey===col.key?(state.sortDir===1?"ascending":"descending"):"none"}">${col.label}<span class="arrow">${arrow}</span></th>`;
+  }).join("");
+  $("thead").querySelectorAll("th:not(.nosort)").forEach(th => th.onclick = () => {
+    const k = th.dataset.key;
+    if (state.sortKey === k) { state.sortDir === 1 ? state.sortDir = -1 : (state.sortKey = null, state.sortDir = 1); }
+    else { state.sortKey = k; state.sortDir = 1; }
+    renderTable();
+  });
+
+  const rows = sorted(filtered());
+  $("tbody").innerHTML = rows.map(c =>
+    `<tr>${cols.map(col => `<td class="${col.cls || ""}">${col.render(c)}</td>`).join("")}</tr>`).join("");
+  $("empty").hidden = rows.length > 0;
+  $("count").textContent = `Showing ${rows.length} of ${COURSES.length}`;
+}
+
+renderCatChips();
+renderColChips();
+renderTable();
+</script>
+</body>
+</html>
