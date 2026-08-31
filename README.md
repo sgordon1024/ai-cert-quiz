@@ -4,6 +4,8 @@ A 10-question quiz that recommends AI courses and certifications based on your r
 
 **Live quiz:** https://sgordon1024.github.io/ai-cert-quiz/
 
+**Browse all courses:** https://sgordon1024.github.io/ai-cert-quiz/courses.html — a spreadsheet-style table with sortable columns, search, discipline/credential/format filters, a free-only toggle, and column show/hide (persisted per browser).
+
 ## How it works
 
 - One `index.html`, zero dependencies — vanilla HTML/CSS/JS.
@@ -12,7 +14,7 @@ A 10-question quiz that recommends AI courses and certifications based on your r
 
 ## Editing the course list
 
-All data lives in the `COURSES` array at the top of the `<script>` block in `index.html`. Add or edit entries there — no build step needed.
+All data lives in the `COURSES` array in `courses-data.js`, shared by the quiz and the table. Add or edit entries there — no build step needed.
 
 ## Caveats
 
