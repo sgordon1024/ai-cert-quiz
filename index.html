@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Course Matchmaker</title>
+<meta name="description" content="A 10-question quiz that matches you with the right AI course or certification for your role, budget, and experience level.">
+<style>
+  :root {
+    --purple: #4B286D;
+    --purple-dark: #371f4f;
+    --purple-light: #f3eef9;
+    --green: #66CC00;
+    --green-dark: #4e9c02;
+    --ink: #2a2333;
+    --muted: #6f6580;
+    --line: #e6dff0;
+    --bg: #faf8fd;
+    --card: #ffffff;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.5; min-height: 100vh;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 32px 20px 64px; }
+  header { text-align: center; margin-bottom: 28px; }
+  .kicker {
+    display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: .12em;
+    text-transform: uppercase; color: var(--green-dark); margin-bottom: 10px;
+  }
+  h1 { font-size: clamp(26px, 5vw, 38px); color: var(--purple); letter-spacing: -0.02em; }
+  .sub { color: var(--muted); margin-top: 8px; font-size: 16px; }
+
+  .progress { display: flex; gap: 6px; margin: 26px 0 18px; }
+  .progress span { flex: 1; height: 6px; border-radius: 3px; background: var(--line); transition: background .3s; }
+  .progress span.done { background: var(--green); }
+  .progress span.now { background: var(--purple); }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 26px; box-shadow: 0 6px 24px rgba(75, 40, 109, 0.06);
+  }
+  .qnum { font-size: 13px; font-weight: 700; color: var(--green-dark); margin-bottom: 6px; }
+  .qtext { font-size: 21px; font-weight: 700; color: var(--purple-dark); margin-bottom: 18px; }
+  .opts { display: grid; gap: 10px; }
+  button.opt {
+    text-align: left; font-size: 16px; font-family: inherit; color: var(--ink);
+    background: var(--purple-light); border: 2px solid transparent; border-radius: 10px;
+    padding: 13px 16px; cursor: pointer; transition: border-color .15s, transform .1s, background .15s;
+  }
+  button.opt:hover, button.opt:focus-visible { border-color: var(--purple); background: #ece2f7; outline: none; }
+  button.opt:active { transform: scale(0.99); }
+  .back {
+    margin-top: 16px; background: none; border: none; color: var(--muted); font-size: 14px;
+    cursor: pointer; font-family: inherit; padding: 4px;
+  }
+  .back:hover { color: var(--purple); text-decoration: underline; }
+
+  /* Results */
+  .results h2 { color: var(--purple); font-size: 24px; margin-bottom: 4px; }
+  .results .rsub { color: var(--muted); margin-bottom: 20px; }
+  .pick {
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 20px 22px; margin-bottom: 14px; position: relative;
+    box-shadow: 0 6px 24px rgba(75, 40, 109, 0.06);
+  }
+  .pick.top { border: 2px solid var(--green); }
+  .medal {
+    position: absolute; top: -11px; left: 18px; font-size: 12px; font-weight: 800;
+    background: var(--green); color: #fff; border-radius: 999px; padding: 3px 12px;
+    text-transform: uppercase; letter-spacing: .06em;
+  }
+  .medal.silver { background: var(--purple); }
+  .pick h3 { font-size: 18px; color: var(--purple-dark); margin: 6px 0 2px; }
+  .prov { color: var(--muted); font-size: 14px; margin-bottom: 10px; }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  .meta span {
+    font-size: 12.5px; font-weight: 600; background: var(--purple-light); color: var(--purple);
+    border-radius: 999px; padding: 4px 11px;
+  }
+  .why { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .why span {
+    font-size: 12px; color: var(--green-dark); background: #f0fae4; border: 1px solid #d6efb8;
+    border-radius: 999px; padding: 3px 10px; font-weight: 600;
+  }
+  .pick p.note { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+  .pick .warn { color: #a15c00; font-weight: 600; }
+  a.go {
+    display: inline-block; background: var(--purple); color: #fff; text-decoration: none;
+    font-weight: 700; font-size: 14px; border-radius: 8px; padding: 9px 16px;
+  }
+  a.go:hover { background: var(--purple-dark); }
+  .alsohead { margin: 24px 0 10px; font-size: 15px; font-weight: 700; color: var(--purple); }
+  .also { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; margin-bottom: 8px;
+    display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .also .l { font-size: 15px; font-weight: 600; }
+  .also .l small { display: block; font-weight: 400; color: var(--muted); }
+  .also a { color: var(--purple); font-weight: 700; font-size: 13.5px; text-decoration: none; white-space: nowrap; }
+  .also a:hover { text-decoration: underline; }
+  .restart {
+    margin-top: 22px; width: 100%; font-family: inherit; font-size: 15px; font-weight: 700;
+    color: var(--purple); background: none; border: 2px solid var(--purple); border-radius: 10px;
+    padding: 12px; cursor: pointer;
+  }
+  .restart:hover { background: var(--purple-light); }
+  footer { margin-top: 28px; font-size: 12.5px; color: var(--muted); text-align: center; }
+  footer p { margin-bottom: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="kicker">AI Courses Masterlist</span>
+    <h1>AI Course Matchmaker</h1>
+    <p class="sub">Ten quick questions → the AI courses &amp; certifications that actually fit your role, budget, and schedule.</p>
+  </header>
+
+  <div class="progress" id="progress" aria-hidden="true"></div>
+  <main id="app" aria-live="polite"></main>
+
+  <footer>
+    <p>Prices are USD list prices as of August 2026 — confirm before enrolling, and check whether L&amp;D already covers it.</p>
+    <p>Anthropic's proctored certifications currently require Claude Partner Network access; the free Anthropic Academy courses are open to everyone.</p>
+  </footer>
+</div>
+
+<script>
+// ------------------------- Course data (from the AI Courses Masterlist, Aug 2026) -------------------------
+// level: 1 beginner · 1.5 beg–int · 2 intermediate · 3 advanced
+// cost: rough single number (USD) for filtering; costLabel carries the nuance
+// format: self | live | exam   ·   cred: proctored | cert | badge
+const COURSES = [
+  {name:"AI Fluency: Framework & Foundations", provider:"Anthropic Academy", cat:"General", level:1, cost:0, costLabel:"Free", effort:4, timeLabel:"~4 hrs", format:"self", cred:"cert", vendor:"anthropic", topics:["prompting","fundamentals"], url:"https://academy.claude.com/", note:"Official Anthropic completion certificate; the 4D framework for working with AI."},
+  {name:"Claude Certified Associate — Foundations", provider:"Anthropic", cat:"General", level:1.5, cost:99, costLabel:"$99 exam", effort:15, timeLabel:"120-min exam + prep", format:"exam", cred:"proctored", vendor:"anthropic", topics:["fundamentals","prompting"], url:"https://academy.claude.com/", note:"The non-developer Claude credential. Valid 12 months.", partner:true},
+  {name:"Google AI Essentials", provider:"Google / Coursera", cat:"General", level:1, cost:49, costLabel:"~$49", effort:10, timeLabel:"~10 hrs", format:"self", cred:"cert", vendor:"google", topics:["fundamentals","prompting"], url:"https://grow.google/ai-essentials/", note:"The most widely recognized entry-level AI credential."},
+  {name:"Google Prompting Essentials", provider:"Google / Coursera", cat:"General", level:1, cost:49, costLabel:"~$49", effort:8, timeLabel:"~8 hrs", format:"self", cred:"cert", vendor:"google", topics:["prompting"], url:"https://www.coursera.org/specializations/prompting-essentials-google", note:"Practical prompting frameworks for everyday work."},
+  {name:"Microsoft Azure AI Fundamentals (AI-900)", provider:"Microsoft", cat:"General", level:1, cost:99, costLabel:"$99 exam", effort:12, timeLabel:"45-min exam + prep", format:"exam", cred:"proctored", vendor:"microsoft", topics:["fundamentals"], url:"https://learn.microsoft.com/en-us/credentials/certifications/azure-ai-fundamentals/", note:"AI & GenAI concepts, no coding. Free prep on Microsoft Learn."},
+  {name:"AWS Certified AI Practitioner (AIF-C01)", provider:"AWS", cat:"General", level:1, cost:100, costLabel:"$100 exam", effort:15, timeLabel:"90-min exam + prep", format:"exam", cred:"proctored", vendor:"aws", topics:["fundamentals"], url:"https://aws.amazon.com/certification/certified-ai-practitioner/", note:"Foundational AI/ML/GenAI concepts; suits non-engineers too."},
+  {name:"Google Cloud Generative AI Leader", provider:"Google Cloud", cat:"General", level:1, cost:99, costLabel:"$99 exam", effort:12, timeLabel:"90-min exam + prep", format:"exam", cred:"proctored", vendor:"google", topics:["strategy","fundamentals"], url:"https://cloud.google.com/learn/certification/generative-ai-leader", note:"Business-level GenAI certification; valid 3 years."},
+  {name:"Career Essentials in Generative AI", provider:"Microsoft × LinkedIn", cat:"General", level:1, cost:0, costLabel:"Free", effort:5, timeLabel:"~5 hrs", format:"self", cred:"cert", vendor:"microsoft", topics:["fundamentals"], url:"https://www.linkedin.com/learning/paths/career-essentials-in-generative-ai-by-microsoft-and-linkedin", note:"Quick free path; certificate shows on your LinkedIn profile."},
+  {name:"OpenAI Certifications — AI Foundations", provider:"OpenAI Academy", cat:"General", level:1, cost:0, costLabel:"Free (pilot)", effort:5, timeLabel:"Self-paced", format:"self", cred:"badge", vendor:"other", topics:["fundamentals"], url:"https://academy.openai.com/", note:"Pilot-gated today; wider rollout planned through 2026."},
+
+  {name:"NN/g UX Certification — AI Specialty", provider:"Nielsen Norman Group", cat:"Design", level:2, cost:6000, costLabel:"≈$1,200 × 5 courses", effort:40, timeLabel:"5 live courses + exams", format:"live", cred:"proctored", vendor:"other", topics:["design","research","strategy"], url:"https://www.nngroup.com/ux-certification/specialties/", note:"The most respected credential in UX — the AI specialty appears on your NN/g certificate."},
+  {name:"AI for Designers", provider:"Interaction Design Foundation", cat:"Design", level:1.5, cost:349, costLabel:"≈$349/yr membership", effort:18, timeLabel:"~5 weeks", format:"self", cred:"cert", vendor:"other", topics:["design","research"], url:"https://www.interaction-design.org/courses/ai-for-designers", note:"How AI changes research, ideation, prototyping, and testing."},
+  {name:"Certificate in AI Fundamentals for UX", provider:"UX Design Institute", cat:"Design", level:1, cost:500, costLabel:"See site", effort:10, timeLabel:"3 weeks, 3 live masterclasses", format:"live", cred:"cert", vendor:"other", topics:["design","prompting"], url:"https://www.uxdesigninstitute.com/courses/ai-fundamentals-for-ux", note:"AI foundations built for UX people; no AI experience needed."},
+  {name:"AI Product Design Certification", provider:"Designlab", cat:"Design", level:2, cost:2195, costLabel:"$2,195–$2,695", effort:150, timeLabel:"~12 months part-time", format:"live", cred:"cert", vendor:"other", topics:["design"], url:"https://designlab.com/", note:"Mentor-led program with a portfolio capstone; courses also à la carte (~$799)."},
+  {name:"UI/UX Design for AI Products", provider:"Stanford Online", cat:"Design", level:2, cost:2950, costLabel:"$2,950", effort:50, timeLabel:"8-week cohort", format:"live", cred:"cert", vendor:"other", topics:["design","strategy"], url:"https://online.stanford.edu/courses/xgal0001-uiux-design-ai-products", note:"Stanford Certificate of Achievement; designing AI-native experiences."},
+  {name:"Uxcel AI courses", provider:"Uxcel", cat:"Design", level:1, cost:150, costLabel:"Subscription", effort:10, timeLabel:"Bite-size lessons", format:"self", cred:"cert", vendor:"other", topics:["design"], url:"https://uxcel.com/courses/ai-in-ux-ui-design", note:"Lightweight continuous learning; a good complement to a bigger credential."},
+  {name:"AI for Product Designers", provider:"Maven (Xinran Ma)", cat:"Design", level:2, cost:1300, costLabel:"$1,300", effort:20, timeLabel:"2-week live intensive", format:"live", cred:"cert", vendor:"other", topics:["design","prompting"], url:"https://maven.com/", note:"Hands-on AI workflows for product designers."},
+
+  {name:"Claude Certified Developer — Foundations", provider:"Anthropic", cat:"Development", level:2, cost:125, costLabel:"$125 exam", effort:20, timeLabel:"120-min exam + prep", format:"exam", cred:"proctored", vendor:"anthropic", topics:["agents","coding"], url:"https://academy.claude.com/", note:"The Anthropic API: tool use, MCP, agents. Valid 12 months.", partner:true},
+  {name:"Claude Certified Architect — Foundations", provider:"Anthropic", cat:"Development", level:3, cost:125, costLabel:"$125 exam", effort:25, timeLabel:"120-min exam + prep", format:"exam", cred:"proctored", vendor:"anthropic", topics:["agents"], url:"https://academy.claude.com/", note:"Scenario-based exam on designing Claude-powered systems at scale.", partner:true},
+  {name:"Claude Certified Architect — Professional", provider:"Anthropic", cat:"Development", level:3, cost:175, costLabel:"$175 exam", effort:30, timeLabel:"120-min exam + prep", format:"exam", cred:"proctored", vendor:"anthropic", topics:["agents"], url:"https://academy.claude.com/", note:"Top-tier Anthropic credential.", partner:true},
+  {name:"Anthropic Academy developer courses", provider:"Anthropic Academy", cat:"Development", level:1.5, cost:0, costLabel:"Free", effort:12, timeLabel:"Self-paced, a few hrs each", format:"self", cred:"cert", vendor:"anthropic", topics:["agents","coding","prompting"], url:"https://academy.claude.com/", note:"Claude with the API · MCP · Claude Code in Action — the intended prep for the Anthropic exams."},
+  {name:"GitHub Copilot (GH-300)", provider:"GitHub / Microsoft", cat:"Development", level:2, cost:99, costLabel:"$99 exam", effort:15, timeLabel:"~100-min exam + prep", format:"exam", cred:"proctored", vendor:"microsoft", topics:["coding"], url:"https://learn.microsoft.com/en-us/credentials/certifications/github-copilot/", note:"AI-assisted development, prompt craft, responsible use."},
+  {name:"Microsoft Azure AI Engineer Associate (AI-102)", provider:"Microsoft", cat:"Development", level:2, cost:165, costLabel:"$165 exam", effort:40, timeLabel:"~100-min exam + prep", format:"exam", cred:"proctored", vendor:"microsoft", topics:["rag","agents"], url:"https://learn.microsoft.com/en-us/credentials/certifications/azure-ai-engineer/", note:"GenAI solutions on Azure AI Foundry / Azure OpenAI, incl. RAG."},
+  {name:"AWS Certified ML Engineer — Associate", provider:"AWS", cat:"Development", level:2, cost:150, costLabel:"$150 exam", effort:50, timeLabel:"130-min exam + prep", format:"exam", cred:"proctored", vendor:"aws", topics:["ml"], url:"https://aws.amazon.com/certification/", note:"ML engineering on AWS (SageMaker, MLOps)."},
+  {name:"AWS Certified Generative AI Developer — Professional", provider:"AWS", cat:"Development", level:3, cost:300, costLabel:"$300 exam", effort:60, timeLabel:"180-min exam + prep", format:"exam", cred:"proctored", vendor:"aws", topics:["rag","agents"], url:"https://aws.amazon.com/certification/", note:"New pro-level GenAI cert: Bedrock, RAG, agentic architectures."},
+  {name:"Google Cloud Professional ML Engineer", provider:"Google Cloud", cat:"Development", level:3, cost:200, costLabel:"$200 exam", effort:60, timeLabel:"2-hr exam + prep", format:"exam", cred:"proctored", vendor:"google", topics:["ml"], url:"https://cloud.google.com/learn/certification/machine-learning-engineer", note:"ML systems on Google Cloud, incl. GenAI on Vertex AI."},
+  {name:"Databricks Generative AI Engineer Associate", provider:"Databricks", cat:"Development", level:2, cost:200, costLabel:"$200 exam", effort:30, timeLabel:"90-min exam + prep", format:"exam", cred:"proctored", vendor:"other", topics:["rag","ml"], url:"https://www.databricks.com/learn/certification/genai-engineer-associate", note:"LLM apps, RAG, and evaluation on Databricks."},
+  {name:"NVIDIA Certified Associate: Generative AI & LLMs", provider:"NVIDIA", cat:"Development", level:2, cost:135, costLabel:"~$135 exam", effort:20, timeLabel:"~1-hr exam + prep", format:"exam", cred:"proctored", vendor:"other", topics:["ml","fundamentals"], url:"https://www.nvidia.com/en-us/learn/certification/generative-ai-llm-associate/", note:"LLM fundamentals and the NVIDIA stack."},
+  {name:"DeepLearning.AI short courses", provider:"DeepLearning.AI / Coursera", cat:"Development", level:1, cost:0, costLabel:"Free–$49/mo", effort:2, timeLabel:"1–2 hrs each", format:"self", cred:"cert", vendor:"other", topics:["agents","rag","prompting","ml"], url:"https://www.deeplearning.ai/courses/", note:"Agents, RAG, prompting; specializations carry certificates."},
+  {name:"Hugging Face Agents Course", provider:"Hugging Face", cat:"Development", level:2, cost:0, costLabel:"Free", effort:25, timeLabel:"Self-paced", format:"self", cred:"cert", vendor:"other", topics:["agents","coding"], url:"https://huggingface.co/learn", note:"Hands-on agent building with a completion certificate."},
+
+  {name:"AI Product Management Specialization", provider:"Duke / Coursera", cat:"Product & Leadership", level:1.5, cost:98, costLabel:"~$49/mo (≈2 months)", effort:40, timeLabel:"~2–3 months part-time", format:"self", cred:"cert", vendor:"other", topics:["strategy"], url:"https://www.coursera.org/specializations/ai-product-management-duke", note:"ML for PMs, the AI product lifecycle, and human factors."},
+  {name:"AI Product Strategy", provider:"Nielsen Norman Group", cat:"Product & Leadership", level:2, cost:1200, costLabel:"≈$1,200", effort:8, timeLabel:"1-day live course", format:"live", cred:"cert", vendor:"other", topics:["strategy","design"], url:"https://www.nngroup.com/courses/", note:"Counts toward the NN/g AI Specialty."},
+  {name:"AI for Business Specialization", provider:"Wharton / Coursera", cat:"Product & Leadership", level:1, cost:98, costLabel:"~$49/mo (≈2 months)", effort:30, timeLabel:"~2 months", format:"self", cred:"cert", vendor:"other", topics:["strategy"], url:"https://www.coursera.org/specializations/ai-for-business-wharton", note:"AI strategy, data, and ethics for business leaders."},
+  {name:"Designing and Building AI Products and Services", provider:"MIT xPRO", cat:"Product & Leadership", level:2, cost:3000, costLabel:"~$3K+", effort:40, timeLabel:"~8 weeks, cohort", format:"live", cred:"cert", vendor:"other", topics:["strategy"], url:"https://xpro.mit.edu/", note:"Executive-education option for product leaders."},
+];
+
+// ------------------------- Questions -------------------------
+const QUESTIONS = [
+  { key:"role", text:"What best describes your role?", opts:[
+    {label:"Designer (UX / UI / product design)", value:"Design"},
+    {label:"Developer / engineer", value:"Development"},
+    {label:"PM, strategist, or people leader", value:"Product & Leadership"},
+    {label:"Something else — I just work here 🙂", value:"General"},
+  ]},
+  { key:"level", text:"How would you rate your AI fluency today?", opts:[
+    {label:"Just starting — I've barely touched AI tools", value:1},
+    {label:"Comfortable — I use AI tools regularly", value:1.5},
+    {label:"Confident — I've built or shipped things with AI", value:2},
+    {label:"Expert — bring me the hardest credential you've got", value:3},
+  ]},
+  { key:"budget", text:"What's your budget (yours, or what you can expense)?", opts:[
+    {label:"$0 — free only", value:0},
+    {label:"Up to $150", value:150},
+    {label:"Up to $500", value:500},
+    {label:"$1,000+ — going big", value:99999},
+  ]},
+  { key:"time", text:"How much time can you realistically commit?", opts:[
+    {label:"A few hours, total", value:6},
+    {label:"10–20 hours", value:22},
+    {label:"20–50 hours", value:55},
+    {label:"A months-long program is fine", value:99999},
+  ]},
+  { key:"cred", text:"What do you want at the end of it?", opts:[
+    {label:"A proctored, verifiable certification — résumé fuel", value:"proctored"},
+    {label:"A certificate of completion is plenty", value:"cert"},
+    {label:"Just the skills — paper doesn't matter", value:"skills"},
+  ]},
+  { key:"style", text:"How do you like to learn?", opts:[
+    {label:"Self-paced, on my own schedule", value:"self"},
+    {label:"Live sessions / cohort with real humans", value:"live"},
+    {label:"Point me at an exam — I'll prep myself", value:"exam"},
+    {label:"No strong preference", value:"any"},
+  ]},
+  { key:"goal", text:"Which sounds most like your goal?", opts:[
+    {label:"Get AI-literate for everyday work", value:"literate"},
+    {label:"Level up my own craft with AI", value:"craft"},
+    {label:"Go deep technically — agents, RAG, ML", value:"deep"},
+    {label:"Guide teams and clients on AI strategy", value:"strategy"},
+  ]},
+  { key:"vendor", text:"Any ecosystem you care about most?", opts:[
+    {label:"Anthropic / Claude", value:"anthropic"},
+    {label:"Google / Google Cloud", value:"google"},
+    {label:"Microsoft / GitHub / Azure", value:"microsoft"},
+    {label:"AWS", value:"aws"},
+    {label:"No preference", value:"any"},
+  ]},
+  { key:"topic", text:"Which topic makes you lean in?", opts:[
+    {label:"Prompting & everyday AI workflows", value:"prompting"},
+    {label:"AI in design & research workflows", value:"design"},
+    {label:"Building agents & AI products", value:"agents"},
+    {label:"AI product strategy & the business side", value:"strategy"},
+  ]},
+  { key:"urgency", text:"How soon do you want this done?", opts:[
+    {label:"This week — give me a quick win", value:"now"},
+    {label:"Within a month", value:"month"},
+    {label:"Sometime this quarter", value:"quarter"},
+    {label:"No rush — a marathon is fine", value:"whenever"},
+  ]},
+];
+
+// ------------------------- Scoring -------------------------
+function scoreCourse(c, a) {
+  let s = 0;
+  const why = [];
+
+  // Discipline
+  if (c.cat === a.role) { s += 40; why.push("matches your discipline"); }
+  else if (c.cat === "General") { s += 22; why.push("great for any role"); }
+  else if (c.cat === "Product & Leadership" && a.goal === "strategy") { s += 18; }
+  else { s -= 10; }
+
+  // Difficulty
+  const gap = Math.abs(c.level - a.level);
+  s += 18 - 14 * gap;
+  if (gap <= 0.5) why.push("right difficulty for you");
+
+  // Budget (hard-ish filter)
+  if (c.cost <= a.budget) { s += 12; if (a.budget <= 150) why.push("fits your budget"); }
+  else { c._overBudget = true; s -= 100; }
+  if (c.cost === 0) { s += 4; if (a.budget === 0) why.push("completely free"); }
+
+  // Time
+  if (c.effort <= a.time) { s += 12; }
+  else if (c.effort > a.time * 1.6) { s -= 22; }
+  else { s -= 8; }
+
+  // Credential
+  if (a.cred === "proctored") { if (c.cred === "proctored") { s += 16; why.push("verifiable certification"); } else if (c.cred === "badge") s += 2; }
+  if (a.cred === "cert") { s += (c.cred !== "badge") ? 8 : 2; }
+  if (a.cred === "skills") { if (c.cost === 0) s += 8; if (c.cred === "proctored") s -= 5; }
+
+  // Style
+  if (a.style !== "any") {
+    if (c.format === a.style) { s += 10; why.push({self:"self-paced", live:"live & cohort-based", exam:"exam-first"}[a.style]); }
+  }
+
+  // Goal
+  if (a.goal === "literate" && c.cat === "General") s += 12;
+  if (a.goal === "craft" && c.cat === a.role && c.cat !== "General") s += 12;
+  if (a.goal === "deep" && c.cat === "Development" && c.level >= 2) s += 14;
+  if (a.goal === "strategy" && (c.topics.includes("strategy") || c.cat === "Product & Leadership")) { s += 14; }
+
+  // Vendor
+  if (a.vendor !== "any" && c.vendor === a.vendor) { s += 12; why.push({anthropic:"Claude ecosystem", google:"Google ecosystem", microsoft:"Microsoft ecosystem", aws:"AWS ecosystem"}[a.vendor]); }
+
+  // Topic
+  if (c.topics.includes(a.topic)) { s += 12; why.push("topic you care about"); }
+
+  // Urgency
+  if (a.urgency === "now") { if (c.effort <= 6) { s += 12; why.push("quick win"); } else if (c.effort > 20) s -= 12; }
+  if (a.urgency === "month" && c.effort <= 25) s += 6;
+  if (a.urgency === "whenever" && c.effort >= 40) s += 4;
+
+  return { score: s, why: why.slice(0, 4) };
+}
+
+// ------------------------- App -------------------------
+const app = document.getElementById("app");
+const progress = document.getElementById("progress");
+let answers = {};
+let step = 0;
+
+function renderProgress() {
+  progress.innerHTML = QUESTIONS.map((_, i) =>
+    `<span class="${i < step ? "done" : i === step ? "now" : ""}"></span>`).join("");
+}
+
+function renderQuestion() {
+  renderProgress();
+  const q = QUESTIONS[step];
+  app.innerHTML = `
+    <div class="card">
+      <div class="qnum">Question ${step + 1} of ${QUESTIONS.length}</div>
+      <div class="qtext">${q.text}</div>
+      <div class="opts">
+        ${q.opts.map((o, i) => `<button class="opt" data-i="${i}">${o.label}</button>`).join("")}
+      </div>
+      ${step > 0 ? `<button class="back" id="back">← Back</button>` : ""}
+    </div>`;
+  app.querySelectorAll(".opt").forEach(btn => btn.addEventListener("click", () => {
+    answers[q.key] = q.opts[+btn.dataset.i].value;
+    step++;
+    step < QUESTIONS.length ? renderQuestion() : renderResults();
+  }));
+  const back = document.getElementById("back");
+  if (back) back.addEventListener("click", () => { step--; renderQuestion(); });
+  app.querySelector(".opt").focus();
+}
+
+function metaChips(c) {
+  const lvl = {1:"Beginner", 1.5:"Beg–Int", 2:"Intermediate", 3:"Advanced"}[c.level];
+  return `<span>${c.costLabel}</span><span>${c.timeLabel}</span><span>${lvl}</span><span>${c.cred === "proctored" ? "Proctored cert" : c.cred === "badge" ? "Badge" : "Certificate"}</span>`;
+}
+
+function renderResults() {
+  renderProgress();
+  const scored = COURSES.map(c => { c._overBudget = false; const r = scoreCourse(c, answers); return { c, ...r }; })
+    .sort((x, y) => y.score - x.score);
+  const affordable = scored.filter(x => !x.c._overBudget);
+  const picks = affordable.slice(0, 3);
+  const also = affordable.slice(3, 7);
+  const medals = ["Best match", "Runner-up", "Third pick"];
+
+  app.innerHTML = `
+    <div class="results">
+      <h2>Your matches</h2>
+      <p class="rsub">Scored across discipline, difficulty, budget, time, credential type, format, and goals.</p>
+      ${picks.map((p, i) => `
+        <div class="pick ${i === 0 ? "top" : ""}">
+          <span class="medal ${i === 0 ? "" : "silver"}">${medals[i]}</span>
+          <h3>${p.c.name}</h3>
+          <div class="prov">${p.c.provider} · ${p.c.cat}</div>
+          <div class="meta">${metaChips(p.c)}</div>
+          ${p.why.length ? `<div class="why">${p.why.map(w => `<span>✓ ${w}</span>`).join("")}</div>` : ""}
+          <p class="note">${p.c.note}${p.c.partner ? ` <span class="warn">Requires Claude Partner Network access — confirm before scheduling.</span>` : ""}</p>
+          <a class="go" href="${p.c.url}" target="_blank" rel="noopener">View course →</a>
+        </div>`).join("")}
+      ${also.length ? `<div class="alsohead">Also worth a look</div>` + also.map(p => `
+        <div class="also">
+          <div class="l">${p.c.name}<small>${p.c.provider} · ${p.c.costLabel} · ${p.c.timeLabel}</small></div>
+          <a href="${p.c.url}" target="_blank" rel="noopener">View →</a>
+        </div>`).join("") : ""}
+      <button class="restart" id="restart">↺ Take it again</button>
+    </div>`;
+  document.getElementById("restart").addEventListener("click", () => { answers = {}; step = 0; renderQuestion(); });
+}
+
+renderQuestion();
+</script>
+</body>
+</html>
